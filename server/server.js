@@ -100,6 +100,11 @@ io.on("connection", (socket) => {
         // websocket emits an "opponentJoined" event to the room and this updates the state and lets the player know that their opponent has joined and game is ready to begin
         socket.to(args.roomId).emit("opponentJoined", roomUpdate)
     })
+    
+    // this listens for the move event. passes in the data from the room and emits the move to the opponent's client app. so when a move is received in the backend, this event is broadcasted to all sockets in the room except for the socket that generated the event.
+    socket.on("move", (data) => {
+        socket.to(data.room).emit("move", data.move)
+    })
 })
 
 // server listens on specified port and logs a message to let us know that it is listening for incoming connections
