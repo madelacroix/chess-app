@@ -6,11 +6,12 @@ import CustomDialog from "./components/CustomDialog"
 import socket from "./socket"
 
 function Game({ players, room, orientation, cleanup }) {
-    const chess = useMemo(() => new Chess(), [])
+    
     // first time using useMemo. It allows you to cache between renders. Here, chess is getting cached so that this instance doesn't it doesn't get created on every re-render. This instance is going to be used for move validation and generation.
+    const chess = useMemo(() => new Chess(), [])
 
-    const [fen, setFen] = useState(chess.fen())
     // FEN stands for Forsyth-Edwards Notation, which i've never heard of before. but basically i think it stores the current position of all the pieces on the board so that it can properly restart a game. not sure. will update when i'm sure.
+    const [fen, setFen] = useState(chess.fen())
 
     const [over, setOver] = useState("")
 
@@ -76,6 +77,13 @@ function Game({ players, room, orientation, cleanup }) {
             makeAMove(move);
         })
     }, [makeAMove])
+
+    // listens for the playerDisconnected event. once received, it ends the game and sends out a notification saying which player has disconnected.
+    useEffect(() => {
+        socket.on("playerDisconnected", (player) => {
+            setOver(`${player.username} has disconnected.`)
+        })
+    }, [])
 
     return (
         <Stack>

@@ -105,6 +105,29 @@ io.on("connection", (socket) => {
     socket.on("move", (data) => {
         socket.to(data.room).emit("move", data.move)
     })
+
+    // this event listens for disconnections and lets a player know if the other player has disconnected from the room session. Code below exits the room if a player disconnects. I might add a reconnection thing later.
+    socket.on("disconnect", () => {
+
+        // takes the number of rooms in use(?) and stores them in an array called gameRooms. .values() is being used to obtain the number of key-value pairs inside the rooms map.
+        const gameRooms = Array.from(rooms.values())
+
+        // loops through each of the rooms and looks for a player that disconnected.
+        gameRooms.forEach((room) => {
+
+            // this variable stores the value of a player's id by matching it up to the socket id (presumably the socket id that i'd be looking for is the player that disconnected)
+            const userInRoom = room.players.find((player) => player.id === socket.id)
+
+            // if it finds the user that disconnected, it deletes the room and emits a playerDisconnected event.
+            if (userInRoom) {
+                if (room.players.length < 2) {
+                    rooms.delete(room.roomId);
+                    return;
+                }
+                socket.to(room.roomId).emit("playerDisconnected", userInRoom)
+            }
+        })
+    })
 })
 
 // server listens on specified port and logs a message to let us know that it is listening for incoming connections
