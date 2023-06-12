@@ -128,6 +128,19 @@ io.on("connection", (socket) => {
             }
         })
     })
+
+    // listens for the closeRoom event from client. when received, it lets all the player know that the room is going to close. it then fetches all the open sockets(players) in the room and stores them in a variable called clientSockets. then it loops through that array and makes them leave the room. finally, the room deletes inside the map.
+    socket.on("closeRoom", async (data) => {
+        socket.to(data.roomId).emit("closeRoom", data)
+
+        const clientSockets = await io.in(data.roomId).fetchSockets();
+
+        clientSockets.forEach((s) => {
+            s.leave(data.roomId)
+        })
+
+        rooms.delete(data.roomId);
+    })
 })
 
 // server listens on specified port and logs a message to let us know that it is listening for incoming connections

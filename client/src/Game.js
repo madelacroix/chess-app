@@ -6,7 +6,7 @@ import CustomDialog from "./components/CustomDialog"
 import socket from "./socket"
 
 function Game({ players, room, orientation, cleanup }) {
-    
+
     // first time using useMemo. It allows you to cache between renders. Here, chess is getting cached so that this instance doesn't it doesn't get created on every re-render. This instance is going to be used for move validation and generation.
     const chess = useMemo(() => new Chess(), [])
 
@@ -85,6 +85,15 @@ function Game({ players, room, orientation, cleanup }) {
         })
     }, [])
 
+    // this hook cleans up the resources and exits the game environment. so when client receives the closeRoom event, it runs an if statement to check if the roomId of the closed room is the same as the current room that's open. if true, it triggers clean up which resets the app state and closes the game environment. when it is reset, it unmounts the game component and goes back to init game :)
+    useEffect(() => {
+        socket.on("closeRoom", ({ roomId }) => {
+            if (roomId === room) {
+                cleanup()
+            }
+        })
+    }, [room, cleanup])
+
     return (
         <Stack>
             <Card>
@@ -116,13 +125,14 @@ function Game({ players, room, orientation, cleanup }) {
                     </Box>
                 )}
             </Stack>
-            {/* This Dialog will be rendered when the state "over" is true. That state basically tells us when the game is over and it should tell us how the game ended-- checkmate, stalemate or draw. */}
+            {/* This Dialog will be rendered when the state "over" is true. That state basically tells us when the game is over and it should tell us how the game ended-- checkmate, stalemate or draw. when they press continue, everything closes up. */}
             <CustomDialog
                 open={Boolean(over)}
                 title={over}
                 contentText={over}
                 handleContinue={() => {
-                    setOver("")
+                    socket.emit("closeRoom", { roomId: room });
+                    cleanup();
                 }}
             />
         </Stack>
